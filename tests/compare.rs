@@ -1,5 +1,4 @@
 mod common;
-mod fixtures;
 
 #[test]
 fn compare_finds_missing_files() {
@@ -97,7 +96,9 @@ fn compare_ignores_extra_destination_files() {
 
 #[test]
 fn compare_does_not_find_nested_missing_files_using_top_level_flag() {
-    let (source, destination) = fixtures::file_tree_nested();
+    let (source, destination) = file_tree! {
+        "subfolder/nested/deep.txt" => "Deep",
+    };
 
     let output = common::run_command(&[
         source.path().to_str().unwrap(),
