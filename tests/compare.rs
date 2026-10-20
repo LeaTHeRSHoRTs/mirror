@@ -1,4 +1,5 @@
 mod common;
+mod fixtures;
 
 #[test]
 fn compare_finds_missing_files() {
@@ -95,20 +96,26 @@ fn compare_ignores_extra_destination_files() {
 }
 
 #[test]
-fn compare_finds_nested_missing_files_when_recursive() {
-    let (source, destination) = file_tree! {
-        "subfolder/nested/deep.txt" => "Deep",
-    };
+fn compare_does_not_find_nested_missing_files_using_top_level_flag() {
+    let (source, destination) = fixtures::file_tree_nested();
 
     let output = common::run_command(&[
         source.path().to_str().unwrap(),
         destination.path().to_str().unwrap(),
         "--compare",
-        "--recursive",
+        "--top-level"
     ]);
 
     common::test_command_success(&output);
-    assert!(output.stdout.contains("deep.txt"));
+
+    assert!(
+        !output.stdout.contains("deep.txt"),
+        "Nested files should not be reported in top-level mode"
+    );
+    assert!(
+        output.stdout.contains("root.txt"),
+        "Missing top-level files should still be reported"
+    );
 }
 
 #[test]

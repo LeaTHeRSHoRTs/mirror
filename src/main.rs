@@ -27,10 +27,10 @@ fn main() {
     let dest_path = PathBuf::from(&cli.destination);
 
     let collect = |dir: &Path| -> IOResult<Vec<PathBuf>> {
-        if cli.recursive {
-            copier::collect_files(dir, dir, cli.hidden, cli.system)
-        } else {
+        if cli.top_level {
             copier::collect_top(dir, cli.hidden, cli.system)
+        } else {
+            copier::collect_files(dir, dir, cli.hidden, cli.system)
         }
     };
 

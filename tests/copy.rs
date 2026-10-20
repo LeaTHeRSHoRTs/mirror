@@ -102,7 +102,7 @@ fn copy_overwrites_existing_destination_file() {
 }
 
 #[test]
-fn copy_recursive_flag_recursively_copies() {
+fn copy_recursively_copies() {
     let (source, destination) = file_tree! {
         "root.txt" => "Root",
         "subfolder/child.txt" => "Child",
@@ -112,7 +112,6 @@ fn copy_recursive_flag_recursively_copies() {
     let output = common::run_command(&[
         source.path().to_str().unwrap(),
         destination.path().to_str().unwrap(),
-        "--recursive",
     ]);
 
     common::test_command_success(&output);
@@ -130,7 +129,7 @@ fn copy_recursive_flag_recursively_copies() {
 }
 
 #[test]
-fn copy_does_not_copy_nested_files_without_recursive_flag() {
+fn copy_does_not_copy_nested_files_with_top_level_flag() {
     let (source, destination) = file_tree! {
         "root.txt" => "Root",
         "subfolder/child.txt" => "Child",
@@ -139,13 +138,14 @@ fn copy_does_not_copy_nested_files_without_recursive_flag() {
     let output = common::run_command(&[
         source.path().to_str().unwrap(),
         destination.path().to_str().unwrap(),
+        "--top-level"
     ]);
 
     common::test_command_success(&output);
     assert!(destination.path().join("root.txt").is_file());
     assert!(
         !destination.path().join("subfolder/child.txt").exists(),
-        "Nested file should not have been copied without --recursive"
+        "Nested file should not have been copied with top-level flag"
     );
 }
 
@@ -157,8 +157,7 @@ fn copy_creates_nested_destination_directories() {
 
     let output = common::run_command(&[
         source.path().to_str().unwrap(),
-        destination.path().to_str().unwrap(),
-        "--recursive",
+        destination.path().to_str().unwrap()
     ]);
 
     common::test_command_success(&output);

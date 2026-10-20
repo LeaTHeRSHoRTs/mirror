@@ -27,10 +27,10 @@ pub struct Arguments {
     pub system: bool,
 
     /// Copies over hidden files as well
-    #[arg(short = 'H', long)]
+    #[arg(short, long)]
     pub hidden: bool,
 
-    /// Recursively checks files and directories. Defaults to true when used without the --compare or -c flag
+    /// Checks or copies over only the top level files
     #[arg(short, long)]
-    pub recursive: bool
+    pub top_level: bool
 }
