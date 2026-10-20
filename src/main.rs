@@ -38,12 +38,31 @@ fn main() {
     let dest_files = collect(&dest_path).expect("Failed to collect destination files");
 
     if cli.compare {
-        for origin_file in &origin_files {
-            if !dest_files.contains(origin_file) {
-                println!("    {}", origin_file.display());
+        if origin_files.is_empty() {
+            println!("Source directory has nothing to compare");
+            return;
+        }
+
+        let missing_files: Vec<_> = origin_files
+            .iter()
+            .filter(|file| !dest_files.contains(file))
+            .collect();
+
+        if missing_files.is_empty() {
+            println!("Directories already match.");
+        } else {
+            for origin_file in &origin_files {
+                if !dest_files.contains(origin_file) {
+                    println!("    {}", origin_file.display());
+                }
             }
         }
     } else {
+        if origin_files.is_empty() {
+            println!("Source directory has nothing to copy over");
+            return;
+        }
+        
         for relative_path in &origin_files {
             let dest_file = dest_path.join(relative_path);
 
