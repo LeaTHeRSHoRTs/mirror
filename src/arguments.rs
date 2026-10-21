@@ -27,7 +27,7 @@ pub struct Arguments {
     pub system: bool,
 
     /// Copies over hidden files as well
-    #[arg(short, long)]
+    #[arg(short = 'H', long)] // Set to H because -h is for --help
     pub hidden: bool,
 
     /// Checks or copies over only the top level files
