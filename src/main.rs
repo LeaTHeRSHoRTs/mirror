@@ -5,8 +5,9 @@ use std::fs;
 use std::io::Result as IOResult;
 use std::path::{Path, PathBuf};
 use std::process;
-
+use std::time::Duration;
 use clap::Parser;
+use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 
 use arguments::Arguments;
 
@@ -62,7 +63,19 @@ fn main() {
             println!("Source directory has nothing to copy over");
             return;
         }
-        
+
+        let total_files = origin_files.len() as u64;
+        let pb = ProgressBar::new(total_files);
+        pb.set_draw_target(ProgressDrawTarget::stdout());
+        pb.set_style(
+            ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} files ({eta}) - Copying...")
+                .unwrap()
+                .progress_chars("=>-")
+        );
+
+        pb.enable_steady_tick(Duration::from_millis(100));
+        pb.tick();
+
         for relative_path in &origin_files {
             let dest_file = dest_path.join(relative_path);
 
@@ -72,6 +85,10 @@ fn main() {
 
             fs::copy(origin_path.join(relative_path), &dest_file)
                 .unwrap_or_else(|error| panic!("Failed to copy file {}, {error}", dest_file.display()));
+
+            pb.inc(1);
         }
+
+        pb.finish_with_message("All files copied!");
     }
 }
