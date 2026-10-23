@@ -1,5 +1,5 @@
 mod arguments;
-mod copier;
+mod traverser;
 mod diff;
 
 use std::{fs, path, process};
@@ -32,9 +32,9 @@ fn main() {
 
     let collect = |dir: &Path| -> IOResult<Vec<PathBuf>> {
         if cli.top_level {
-            copier::collect_top(dir, cli.hidden, cli.system)
+            traverser::collect_top(dir, cli.hidden, cli.system)
         } else {
-            copier::collect_files(dir, dir, cli.hidden, cli.system)
+            traverser::collect_files(dir, dir, cli.hidden, cli.system)
         }
     };
 
