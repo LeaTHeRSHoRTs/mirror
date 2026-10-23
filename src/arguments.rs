@@ -32,5 +32,9 @@ pub struct Arguments {
 
     /// Checks or copies over only the top level files
     #[arg(short, long)]
-    pub top_level: bool
+    pub top_level: bool,
+
+    /// Whether to compare files by name only, disregarding the contents. Improves performance
+    #[arg(short, long)]
+    pub name: bool
 }

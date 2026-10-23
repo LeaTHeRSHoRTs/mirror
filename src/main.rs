@@ -1,18 +1,21 @@
 mod arguments;
 mod copier;
+mod diff;
 
-use std::fs;
-use std::io::Result as IOResult;
+use std::{fs, path, process};
 use std::path::{Path, PathBuf};
-use std::process;
-use std::time::Duration;
+use std::io::Result as IOResult;
+
 use clap::Parser;
-use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
+use indicatif::{ProgressIterator, ProgressStyle};
+use console::style;
 
 use arguments::Arguments;
 
 fn main() {
     let cli: Arguments = Arguments::parse();
+
+    println!();
     
     if !fs::exists(&cli.source).unwrap_or(false) {
         eprintln!("Source path does not exist: {}", cli.source);
@@ -52,11 +55,13 @@ fn main() {
         if missing_files.is_empty() {
             println!("Directories already match.");
         } else {
-            for origin_file in &origin_files {
-                if !dest_files.contains(origin_file) {
-                    println!("    {}", origin_file.display());
-                }
-            }
+            diff::show_diff(
+                &origin_path,
+                &dest_path,
+                &origin_files,
+                &dest_files,
+                cli.name
+            ).expect("Could not generate diff");
         }
     } else {
         if origin_files.is_empty() {
@@ -64,19 +69,23 @@ fn main() {
             return;
         }
 
-        let total_files = origin_files.len() as u64;
-        let pb = ProgressBar::new(total_files);
-        pb.set_draw_target(ProgressDrawTarget::stdout());
-        pb.set_style(
-            ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} files ({eta}) - Copying...")
+        let display_path = |path: &Path| {
+            path::absolute(path).map_or_else(
+                |_| format!("./{}", path.display()),
+                |val| val.display().to_string(),
+            )
+        };
+
+        let display_origin = display_path(&origin_path);
+        let display_dest = display_path(&dest_path);
+
+        println!("Moving {} files from \"{}\" to \"{}\"", dest_files.len(), style(&display_origin).italic(), style(&display_dest).italic());
+
+        for relative_path in origin_files.iter().progress_with_style(
+            ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} files ({eta})")
                 .unwrap()
                 .progress_chars("=>-")
-        );
-
-        pb.enable_steady_tick(Duration::from_millis(100));
-        pb.tick();
-
-        for relative_path in &origin_files {
+        ) {
             let dest_file = dest_path.join(relative_path);
 
             if let Some(parent) = dest_file.parent() {
@@ -85,10 +94,6 @@ fn main() {
 
             fs::copy(origin_path.join(relative_path), &dest_file)
                 .unwrap_or_else(|error| panic!("Failed to copy file {}, {error}", dest_file.display()));
-
-            pb.inc(1);
         }
-
-        pb.finish_with_message("All files copied!");
     }
 }
