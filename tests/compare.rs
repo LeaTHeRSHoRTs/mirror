@@ -1,3 +1,5 @@
+use crate::common::create_temps;
+
 mod common;
 
 #[test]
@@ -69,7 +71,7 @@ fn compare_finds_files_when_destination_is_empty() {
 }
 
 #[test]
-fn compare_ignores_extra_destination_files() {
+fn compare_includes_extra_destination_files() {
     let (source, destination) = file_tree! {
         source: {
             "a.txt" => "A",
@@ -88,7 +90,7 @@ fn compare_ignores_extra_destination_files() {
 
     common::test_command_success(&output);
     assert!(
-        !output.stdout.contains("extra.txt"),
+        output.stdout.contains("extra.txt"),
         "Unexpected difference: {:?}",
         output.stdout
     );
@@ -97,6 +99,7 @@ fn compare_ignores_extra_destination_files() {
 #[test]
 fn compare_does_not_find_nested_missing_files_using_top_level_flag() {
     let (source, destination) = file_tree! {
+        "root.txt" => "Root",
         "subfolder/nested/deep.txt" => "Deep",
     };
 
@@ -115,12 +118,13 @@ fn compare_does_not_find_nested_missing_files_using_top_level_flag() {
     );
     assert!(
         output.stdout.contains("root.txt"),
-        "Missing top-level files should still be reported"
+        "Missing top-level files should still be reported. Actual: {}",
+        output.stdout
     );
 }
 
 #[test]
-fn compare_does_not_recurse_without_recursive_flag() {
+fn compare_recurses_by_default() {
     let (source, destination) = file_tree! {
         "subfolder/nested/deep.txt" => "Deep",
     };
@@ -133,8 +137,8 @@ fn compare_does_not_recurse_without_recursive_flag() {
 
     common::test_command_success(&output);
     assert!(
-        !output.stdout.contains("deep.txt"),
-        "Unexpected nested file in output: {:?}",
+        output.stdout.contains("deep.txt"),
+        "Unexpected output: {:?}",
         output.stdout
     );
 }
@@ -151,7 +155,7 @@ fn compare_handles_empty_source_directory() {
 
     common::test_command_success(&output);
     assert!(
-        output.stdout.contains("Source directory has nothing to compare"),
+        output.stdout.contains("Source and destination directory has nothing to compare"),
         "Command did not tell the user that the directories already match. Actual: '{}'",
         output.stdout
     )

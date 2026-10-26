@@ -42,27 +42,17 @@ fn main() {
     let dest_files = collect(&dest_path).expect("Failed to collect destination files");
 
     if cli.compare {
-        if origin_files.is_empty() {
-            println!("Source directory has nothing to compare");
+        if origin_files.is_empty() && dest_files.is_empty() {
+            println!("Source and destination directory has nothing to compare");
             return;
         }
 
-        let missing_files: Vec<_> = origin_files
-            .iter()
-            .filter(|file| !dest_files.contains(file))
-            .collect();
-
-        if missing_files.is_empty() {
-            println!("Directories already match.");
-        } else {
-            diff::show_diff(
-                &origin_path,
-                &dest_path,
-                &origin_files,
-                &dest_files,
-                cli.name
-            ).expect("Could not generate diff");
-        }
+        let differences = diff::get_diffs(
+            &origin_path, &dest_path,
+            &origin_files, &dest_files,
+            cli.name_only
+        ).expect("Failed to calculate differences between source and destination");
+        diff::print_diff(&differences);
     } else {
         if origin_files.is_empty() {
             println!("Source directory has nothing to copy over");

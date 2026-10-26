@@ -34,7 +34,7 @@ pub struct Arguments {
     #[arg(short, long)]
     pub top_level: bool,
 
-    /// Whether to compare files by name only, disregarding the contents. Improves performance
+    /// Whether to compare files by name only, disregarding the contents. Improves performance, but can miss differences inside the compared files
     #[arg(short, long)]
-    pub name: bool
+    pub name_only: bool
 }

@@ -1,4 +1,5 @@
 mod common;
+use crate::common::create_temps;
 use std::fs;
 
 #[test]

@@ -45,7 +45,7 @@ pub fn create_temps<F : FnOnce(&Path, &Path)>(setup: F) -> (TempDir, TempDir) {
 #[macro_export]
 macro_rules! file_tree {
     ($($path:literal => $contents:literal),*$(,)?) => {{
-        let (source, dest) = $crate::common::create_temps(|source, _dest| {
+        let (source, dest) = create_temps(|source, _| {
             $(
                 let path = source.join($path);
 
@@ -64,7 +64,7 @@ macro_rules! file_tree {
         source: { $($source_path:literal => $source_contents:literal),* $(,)? },
         destination: { $($dest_path:literal => $dest_contents:literal),* $(,)? } $(,)?
     ) => {{
-        let (source, destination) = $crate::common::create_temps(|source, destination| {
+        let (source, destination) = create_temps(|source, destination| {
             $(
                 let path = source.join($source_path);
 

@@ -1,3 +1,5 @@
+use crate::common::create_temps;
+
 mod common;
 
 #[test]
@@ -23,7 +25,7 @@ fn cli_help_succeeds() {
     let output = common::run_command(&["--help"]);
 
     common::test_command_success(&output);
-    assert!(output.stdout.contains("--recursive"));
+    assert!(output.stdout.contains("--top-level"));
     assert!(output.stdout.contains("--compare"));
 }
 
