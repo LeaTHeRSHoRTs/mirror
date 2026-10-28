@@ -9,12 +9,18 @@ pub struct TestOutput {
     pub stderr: String,
 }
 
-pub fn run_command(args: &[&str]) -> TestOutput {
-    run_command_in(args, TempDir::new().unwrap().path())
+pub fn run_command(source: &Path, destination: Option<&Path>, args: &[&str]) -> TestOutput {
+    run_command_in(source, destination, args, TempDir::new().unwrap().path())
 }
-pub fn run_command_in(args: &[&str], working_dir: &Path) -> TestOutput {
+pub fn run_command_in(source: &Path, destination: Option<&Path>, args: &[&str], working_dir: &Path) -> TestOutput {
     let mut command = Command::new(env!("CARGO_BIN_EXE_mirror"));
-    command.args(args);
+    
+    command.arg(source);
+    if let Some(destination) = destination {
+        command.arg(destination);
+    }
+    
+    command.args(args.iter().map(|arg| format!("--{arg}")));
     command.current_dir(working_dir);
 
     let output = command.output().expect("Failed to run command");
@@ -26,7 +32,7 @@ pub fn run_command_in(args: &[&str], working_dir: &Path) -> TestOutput {
     }
 }
 
-pub fn test_command_success(output: &TestOutput) {
+pub fn assert_command_success(output: &TestOutput) {
     assert!(output.success,
         "Command failed!\n\n\
         --- stderr ---\n{}\n\n\
