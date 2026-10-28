@@ -130,27 +130,6 @@ fn copy_recursively_copies() {
 }
 
 #[test]
-fn copy_does_not_copy_nested_files_with_top_level_flag() {
-    let (source, destination) = file_tree! {
-        "root.txt" => "Root",
-        "subfolder/child.txt" => "Child",
-    };
-
-    let output = common::run_command(&[
-        source.path().to_str().unwrap(),
-        destination.path().to_str().unwrap(),
-        "--top-level"
-    ]);
-
-    common::test_command_success(&output);
-    assert!(destination.path().join("root.txt").is_file());
-    assert!(
-        !destination.path().join("subfolder/child.txt").exists(),
-        "Nested file should not have been copied with top-level flag"
-    );
-}
-
-#[test]
 fn copy_creates_nested_destination_directories() {
     let (source, destination) = file_tree! {
         "subfolder/nested/deep.txt" => "Deep",
@@ -202,4 +181,26 @@ fn copy_preserves_empty_source_file() {
         .expect("Empty file should have been copied");
     
     assert_eq!(copied, "");
+}
+
+// --top-level
+#[test]
+fn copy_does_not_copy_nested_files_with_top_level_flag() {
+    let (source, destination) = file_tree! {
+        "root.txt" => "Root",
+        "subfolder/child.txt" => "Child",
+    };
+
+    let output = common::run_command(&[
+        source.path().to_str().unwrap(),
+        destination.path().to_str().unwrap(),
+        "--top-level"
+    ]);
+
+    common::test_command_success(&output);
+    assert!(destination.path().join("root.txt").is_file());
+    assert!(
+        !destination.path().join("subfolder/child.txt").exists(),
+        "Nested file should not have been copied with top-level flag"
+    );
 }

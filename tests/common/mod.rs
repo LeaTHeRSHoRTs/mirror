@@ -44,6 +44,8 @@ pub fn create_temps<F : FnOnce(&Path, &Path)>(setup: F) -> (TempDir, TempDir) {
 
 #[macro_export]
 macro_rules! file_tree {
+    () => {{ create_temps(|_, _| {}) }};
+
     ($($path:literal => $contents:literal),*$(,)?) => {{
         let (source, dest) = create_temps(|source, _| {
             $(

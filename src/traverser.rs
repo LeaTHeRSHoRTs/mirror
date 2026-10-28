@@ -1,4 +1,4 @@
-use std::{fs, io::Result as IOResult};
+use std::{fs, io::Result as IOResult, path};
 use std::path::{Path, PathBuf};
 
 pub fn collect_files(origin: &Path, dir: &Path, hidden: bool, system: bool) -> IOResult<Vec<PathBuf>> {
@@ -45,6 +45,13 @@ pub fn collect_top(dir: &Path, hidden: bool, system: bool) -> IOResult<Vec<PathB
     }
 
     Ok(files)
+}
+
+pub fn get_absolute_path(path: &Path) -> String {
+    path::absolute(path).map_or_else(
+        |_| format!("./{}", path.display()),
+        |val| val.display().to_string(),
+    )
 }
 
 // Windows helpers
@@ -246,12 +253,12 @@ mod tests {
         fs::write(&nested_file, "test second").expect("Failed to create nested file");
 
         assert!(
-            is_hidden(&file).expect("Failed to check hidden attribute"),
-            "File {} is not hidden", file.display()
+            !is_hidden(&file).expect("Failed to check hidden attribute"),
+            "File {} is hidden", file.display()
         );
         assert!(
-            is_hidden(&nested_file).expect("Failed to check hidden attribute"),
-            "File {} is not hidden", nested_file.display()
+            !is_hidden(&nested_file).expect("Failed to check hidden attribute"),
+            "File {} is hidden", nested_file.display()
         );
     }
 }

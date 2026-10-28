@@ -97,6 +97,45 @@ fn compare_includes_extra_destination_files() {
 }
 
 #[test]
+fn compare_recurses_by_default() {
+    let (source, destination) = file_tree! {
+        "subfolder/nested/deep.txt" => "Deep",
+    };
+
+    let output = common::run_command(&[
+        source.path().to_str().unwrap(),
+        destination.path().to_str().unwrap(),
+        "--compare",
+    ]);
+
+    common::test_command_success(&output);
+    assert!(
+        output.stdout.contains("subfolder/nested"),
+        "Unexpected output: {:?}",
+        output.stdout
+    );
+}
+
+#[test]
+fn compare_handles_empty_source_directory() {
+    let (source, destination) = file_tree!();
+
+    let output = common::run_command(&[
+        source.path().to_str().unwrap(),
+        destination.path().to_str().unwrap(),
+        "--compare",
+    ]);
+
+    common::test_command_success(&output);
+    assert!(
+        output.stdout.contains("Source and destination directory has nothing to compare"),
+        "Command did not tell the user that the directories already match. Actual: '{}'",
+        output.stdout
+    )
+}
+
+// --top-level
+#[test]
 fn compare_does_not_find_nested_missing_files_using_top_level_flag() {
     let (source, destination) = file_tree! {
         "root.txt" => "Root",
@@ -123,40 +162,3 @@ fn compare_does_not_find_nested_missing_files_using_top_level_flag() {
     );
 }
 
-#[test]
-fn compare_recurses_by_default() {
-    let (source, destination) = file_tree! {
-        "subfolder/nested/deep.txt" => "Deep",
-    };
-
-    let output = common::run_command(&[
-        source.path().to_str().unwrap(),
-        destination.path().to_str().unwrap(),
-        "--compare",
-    ]);
-
-    common::test_command_success(&output);
-    assert!(
-        output.stdout.contains("deep.txt"),
-        "Unexpected output: {:?}",
-        output.stdout
-    );
-}
-
-#[test]
-fn compare_handles_empty_source_directory() {
-    let (source, destination) = file_tree! {};
-
-    let output = common::run_command(&[
-        source.path().to_str().unwrap(),
-        destination.path().to_str().unwrap(),
-        "--compare",
-    ]);
-
-    common::test_command_success(&output);
-    assert!(
-        output.stdout.contains("Source and destination directory has nothing to compare"),
-        "Command did not tell the user that the directories already match. Actual: '{}'",
-        output.stdout
-    )
-}

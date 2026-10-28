@@ -1,19 +1,115 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 use std::{fs, io};
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use console::{Color, Style};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum ChangeState {
     Changed,
     Removed,
     Added,
+    Mixed,
     None
 }
 
 pub struct Change<'a> {
     path: &'a Path,
     change: ChangeState
+}
+
+#[derive(Default)]
+struct Node {
+    change: Option<ChangeState>,
+    children: BTreeMap<OsString, Node>
+}
+
+impl Node {
+    fn insert(&mut self, path: &Path, change: ChangeState) {
+        let mut node = self;
+
+        for component in path.components() {
+            node = node.children
+                .entry(component.as_os_str().to_os_string())
+                .or_default();
+        }
+
+        node.change = Some(change);
+    }
+
+    fn summarize(&self) -> Option<ChangeState> {
+        if self.children.is_empty() {
+            return self.change;
+        }
+
+        let mut states = self.children.values().map(Node::summarize);
+
+        let Some(Some(first)) = states.next() else {
+            return Some(ChangeState::Mixed);
+        };
+
+        // If all files are same in the folder, collapse
+        if states.all(|state| state == Some(first)) {
+            Some(first)
+        } else {
+            Some(ChangeState::Mixed)
+        }
+    }
+
+    fn print_entry(path: &Path, state: ChangeState, is_dir: bool) {
+        let (status, color) = match state {
+            ChangeState::Changed => ("~", Color::Yellow),
+            ChangeState::Removed => ("-", Color::Red),
+            ChangeState::Added => ("+", Color::Green),
+            ChangeState::None | ChangeState::Mixed => return,
+        };
+
+        let suffix = if is_dir { "/*" } else { "" };
+
+        println!(
+            "{}",
+            Style::new().fg(color).apply_to(format!(
+                " [{}] {}{}",
+                status,
+                path.display().to_string().replace("\\", "/"),
+                suffix
+            ))
+        );
+    }
+
+    fn print(&self, path: &mut PathBuf, verbose: bool) {
+        let Some(state) = self.summarize() else {
+            return;
+        };
+
+        // Collapse if the children have the same states
+        if !verbose
+            && !self.children.is_empty()
+            && state != ChangeState::Mixed
+            // Check if any of the children are actually directories
+            && self.children.iter().any(|(_, child)| child.children.is_empty())
+        {
+            if state != ChangeState::None || verbose {
+                Node::print_entry(path, state, !self.children.is_empty());
+            }
+            return;
+        }
+
+        // If it's a file
+        if self.children.is_empty() {
+            // If it was modified in some way
+            if state != ChangeState::None {
+                Self::print_entry(path, state, false);
+            }
+            return;
+        }
+
+        for (name, child) in &self.children {
+            path.push(name);
+            child.print(path, verbose);
+            path.pop();
+        }
+    }
 }
 
 pub fn get_diffs<'a>(
@@ -31,31 +127,30 @@ pub fn get_diffs<'a>(
     let mut accumulated: Vec<Change> = dest_files
         .iter()
         .map(|path| {
-        // Does the origin have the file in the destination
-        if origin_set.contains(path.as_path()) {
+            // Does the origin have the file in the destination
+            return if origin_set.contains(path.as_path()) {
+                // If we are to not only check the name
+                if !names_only {
+                    let origin_size = fs::metadata(origin_root.join(path))?.len();
+                    let dest_size = fs::metadata(dest_root.join(path))?.len();
 
-            // If we are to not only check the name
-            if !names_only {
-                let origin_size = fs::metadata(origin_root.join(path))?.len();
-                let dest_size = fs::metadata(dest_root.join(path))?.len();
+                    // Check the size first for difference
+                    if origin_size == dest_size {
+                        let origin_bytes = fs::read(origin_root.join(path))?;
+                        let dest_bytes = fs::read(dest_root.join(path))?;
 
-                // Check the size first for difference
-                if origin_size == dest_size {
-                    let origin_bytes = fs::read(origin_root.join(path))?;
-                    let dest_bytes = fs::read(dest_root.join(path))?;
-
-                    // Everything matches, so ignore it
-                    if origin_bytes == dest_bytes {
-                        return Ok(Change { path, change: ChangeState::None });
+                        // Everything matches, so ignore it
+                        if origin_bytes == dest_bytes {
+                            return Ok(Change { path, change: ChangeState::None });
+                        }
                     }
                 }
-            }
-        } else {
-            // Item wasn't in source, so it was added
-            return Ok(Change { path, change: ChangeState::Added });
-        }
 
-        return Ok(Change { path, change: ChangeState::None });
+                Ok(Change { path, change: ChangeState::Changed })
+            } else {
+                // Item wasn't in source, so it was added
+                Ok(Change { path, change: ChangeState::Added })
+            }
     }).collect::<Result<Vec<_>, io::Error>>()?;
 
     // Check the source for files that are missing from dest
@@ -76,31 +171,34 @@ pub fn get_diffs<'a>(
     Ok(accumulated)
 }
 
-pub fn print_diff(diff: &[Change<'_>]) {
-    let mut has_changes = false;
-    
+pub fn print_diff(diff: &[Change<'_>], verbose: bool) {
+    let mut root = Node::default();
+
     for change in diff {
-        has_changes = true;
-        
-        let status = match change.change {
-            ChangeState::Changed => "~",
-            ChangeState::Removed => "-",
-            ChangeState::Added => "+",
-            ChangeState::None => continue,
-        };
-
-        let status_color = match change.change {
-            ChangeState::Changed => Color::Yellow,
-            ChangeState::Removed => Color::Red,
-            ChangeState::Added => Color::Green,
-            ChangeState::None => continue,
-        };
-
-        let styling = Style::new().fg(status_color);
-        println!("{}", styling.apply_to(format!(" [{}] {}", status, change.path.display())));
+        root.insert(change.path, change.change);
     }
 
-    if !has_changes {
+    let mut has_changes = false;
+    let mut not_changed = 0;
+
+
+    for change in diff {
+        match change.change {
+            ChangeState::None => not_changed += 1,
+            _ => has_changes = true,
+        }
+    }
+
+    if has_changes {
+        println!("There are differences in the two directories:");
+
+        for (name, child) in &root.children {
+            let mut path = PathBuf::from(name.as_os_str());
+            child.print(&mut path, verbose);
+        }
+
+        println!("{} files are the same in both directories.", not_changed)
+    } else {
         println!("Directories already match.");
     }
 }
