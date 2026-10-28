@@ -10,7 +10,7 @@ env:
 
 jobs:
   test:
-    uses: .github/workflows/rust-test.yml
+    uses: ./.github/workflows/rust-test.yml
   build:
     needs: test
     runs-on: ${{ matrix.os }}
