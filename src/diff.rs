@@ -36,7 +36,6 @@ impl Node {
 
         node.change = Some(change);
     }
-
     fn summarize(&self) -> Option<ChangeState> {
         if self.children.is_empty() {
             return self.change;
@@ -55,28 +54,6 @@ impl Node {
             Some(ChangeState::Mixed)
         }
     }
-
-    fn print_entry(path: &Path, state: ChangeState, is_dir: bool) {
-        let (status, color) = match state {
-            ChangeState::Changed => ("~", Color::Yellow),
-            ChangeState::Removed => ("-", Color::Red),
-            ChangeState::Added => ("+", Color::Green),
-            ChangeState::None | ChangeState::Mixed => return,
-        };
-
-        let suffix = if is_dir { "/*" } else { "" };
-
-        println!(
-            "{}",
-            Style::new().fg(color).apply_to(format!(
-                " [{}] {}{}",
-                status,
-                path.display().to_string().replace("\\", "/"),
-                suffix
-            ))
-        );
-    }
-
     fn print(&self, path: &mut PathBuf, verbose: bool) {
         let Some(state) = self.summarize() else {
             return;
@@ -86,8 +63,6 @@ impl Node {
         if !verbose
             && !self.children.is_empty()
             && state != ChangeState::Mixed
-            // Check if any of the children are actually directories
-            && self.children.iter().any(|(_, child)| child.children.is_empty())
         {
             if state != ChangeState::None || verbose {
                 Node::print_entry(path, state, !self.children.is_empty());
@@ -109,6 +84,28 @@ impl Node {
             child.print(path, verbose);
             path.pop();
         }
+    }
+
+    // Static methods
+    fn print_entry(path: &Path, state: ChangeState, is_dir: bool) {
+        let (status, color) = match state {
+            ChangeState::Changed => ("~", Color::Yellow),
+            ChangeState::Removed => ("-", Color::Red),
+            ChangeState::Added => ("+", Color::Green),
+            ChangeState::None | ChangeState::Mixed => return,
+        };
+
+        let suffix = if is_dir { "/*" } else { "" };
+
+        println!(
+            "{}",
+            Style::new().fg(color).apply_to(format!(
+                " [{}] {}{}",
+                status,
+                path.display().to_string().replace("\\", "/"),
+                suffix
+            ))
+        );
     }
 }
 
