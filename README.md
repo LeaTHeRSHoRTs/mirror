@@ -27,6 +27,7 @@ mirror source destination --hidden --system
 
 ## Changelog
 ### 1.0.0
+- Implemented core features
 - Added the `--hidden` and `--system` flags
 - Added the `--compare` flag and comparison features
 - Added the `--verbose` flag for more information when using the tool
