@@ -1,6 +1,7 @@
 name: Rust - Test
 
 on:
+  workflow_call: 
   push:
     branches: [ "master" ]
   pull_request:
