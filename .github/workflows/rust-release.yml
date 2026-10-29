@@ -76,6 +76,6 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          name: Mirror ${{ github.ref_name }}
-          generate_release_notes: true
+          name: ${{ github.ref_name }}
+          body_path: README.md
           files: dist/*
