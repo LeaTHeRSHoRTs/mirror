@@ -47,15 +47,24 @@ jobs:
       - name: Build release
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Debug build output
+        shell: bash
+        run: |
+          echo "Target: ${{ matrix.target }}"
+          echo "All target files:"
+          find target -type f -name 'mirror*' 2>/dev/null || true
+          echo "Cargo target directory:"
+          cargo metadata --no-deps --format-version 1
+
       - name: Prepare binary
         shell: bash
         run: |
-          mkdir -p dist
+          mkdir -p dist/mirror-${{ github.ref_name }}-${{ matrix.target }}
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp "target/release/mirror.exe" \
+            cp "target/${{ matrix.target }}/release/mirror.exe" \
               "dist/mirror-${{ github.ref_name }}-${{ matrix.target }}.exe"
           else
-            cp "target/release/mirror" \
+            cp "target/${{ matrix.target }}/release/mirror" \
               "dist/mirror-${{ github.ref_name }}-${{ matrix.target }}"
           fi
       - name: Upload binary
