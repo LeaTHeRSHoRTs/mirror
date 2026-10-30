@@ -6,10 +6,10 @@ mod copier;
 use std::{fs, process};
 use std::io::Result as IOResult;
 use std::path::{Path, PathBuf};
-
+use std::time::Duration;
 use clap::Parser;
 use console::style;
-
+use indicatif::ProgressBar;
 use arguments::Arguments;
 
 fn main() {
@@ -27,13 +27,18 @@ fn main() {
     let origin_path = PathBuf::from(&cli.source);
     let dest_path = PathBuf::from(&cli.destination);
 
+    let spinner = ProgressBar::new_spinner();
+    spinner.enable_steady_tick(Duration::from_millis(500));
+
     let collect = |dir: &Path| -> IOResult<Vec<PathBuf>> {
-        if cli.top_level { traverser::collect_top(dir, cli.hidden, cli.system) }
-        else { traverser::collect_files(dir, dir, cli.hidden, cli.system) }
+        if cli.top_level { traverser::collect_top(dir, cli.hidden, cli.system, &spinner) }
+        else { traverser::collect_files(dir, dir, cli.hidden, cli.system, &spinner) }
     };
 
     let origin_files = collect(&origin_path).expect("Failed to collect source files");
     let dest_files = collect(&dest_path).expect("Failed to collect destination files");
+    
+    spinner.finish_and_clear();
 
     if cli.compare {
         if origin_files.is_empty() && dest_files.is_empty() {
@@ -46,6 +51,7 @@ fn main() {
             &origin_files, &dest_files,
             cli.name_only
         ).expect("Failed to calculate differences between source and destination");
+
         diff::print_diff(&differences, cli.verbose);
     } else {
         if origin_files.is_empty() {
