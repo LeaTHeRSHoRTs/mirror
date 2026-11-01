@@ -11,6 +11,8 @@ runs:
   steps:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.target }}
 
     - name: Build
       shell: bash
