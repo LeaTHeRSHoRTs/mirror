@@ -23,8 +23,6 @@ jobs:
 
       - name: Build programs
         uses: ./.github/actions/rust-build
-        with:
-          target: ${{ matrix.os }}
 
       - name: Run tests
         run: cargo test --verbose
