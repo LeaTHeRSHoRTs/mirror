@@ -79,6 +79,7 @@ pub fn get_absolute_path(path: &Path) -> String {
     )
 }
 
+// Utility that unwraps the promise returned by the attribute helpers elegantly
 fn gather_metadata(path: &Path) -> GatheredMetadata {
     match get_attributes(path) {
         Ok(attrs) => attrs,
