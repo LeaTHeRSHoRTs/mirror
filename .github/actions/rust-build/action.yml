@@ -4,7 +4,7 @@ description: Set up Rust and build the project
 inputs:
   target:
     description: Rust compilation target
-    required: true
+    required: false
 
 runs:
   using: composite
@@ -14,4 +14,9 @@ runs:
 
     - name: Build
       shell: bash
-      run: cargo build --release --verbose --target ${{ inputs.target }}
+      run: |
+        if [ -n "${{ inputs.target }}" ]; then
+          cargo build --release --verbose --target ${{ inputs.target }}
+        else
+          cargo build --release --verbose
+        fi
