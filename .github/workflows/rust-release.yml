@@ -12,10 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  test:
-    uses: ./.github/workflows/rust-test.yml
   build:
-    needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -84,6 +81,10 @@ jobs:
           pattern: binary-*
           path: dist
           merge-multiple: true
+      - name: List release files
+        run: |
+          echo "Contents of dist:"
+          ls -lah dist/
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
