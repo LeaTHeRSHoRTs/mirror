@@ -56,11 +56,19 @@ jobs:
             cp "target/${{ matrix.target }}/release/mirror" \
               "dist/mirror-${{ github.ref_name }}-${{ matrix.target }}"
           fi
+      - name: Verify binary
+        shell: bash
+        run: |
+          echo "Runner: ${{ runner.os }}"
+          echo "Target: ${{ matrix.target }}"
+          find dist -type f -print
+          ls -lah dist/
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.target }}
           path: dist/*
+          if-no-files-found: error
   release:
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
@@ -75,6 +83,11 @@ jobs:
           pattern: binary-*
           path: dist/
           merge-multiple: true
+
+      - name: Verify downloaded binaries
+        run: |
+          find dist -type f -print
+          ls -lah dist/
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
