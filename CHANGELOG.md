@@ -5,7 +5,7 @@
 
 ## [v1.0.1]
 ### Fixed
-- Fixed a bug where the program was slow on large directories on windows systems\
+- Fixed a bug where the program was slow when scanning large directories on windows systems
 - Fixed a bug where the `--compare` flag would not group collapse directories where all the contents are the same status
 
 ### Added
