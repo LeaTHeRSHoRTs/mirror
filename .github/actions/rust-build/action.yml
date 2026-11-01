@@ -1,0 +1,17 @@
+name: Rust - Build
+description: Set up Rust and build the project
+
+inputs:
+  target:
+    description: Rust compilation target
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Build
+      shell: bash
+      run: cargo build --release --verbose --target ${{ inputs.target }}

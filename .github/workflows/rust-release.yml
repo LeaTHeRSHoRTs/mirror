@@ -40,21 +40,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
       - name: Build release
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Debug build output
-        shell: bash
-        run: |
-          echo "Target: ${{ matrix.target }}"
-          echo "All target files:"
-          find target -type f -name 'mirror*' 2>/dev/null || true
-          echo "Cargo target directory:"
-          cargo metadata --no-deps --format-version 1
+        uses: ./.github/actions/rust-build
+        with:
+          target: ${{ matrix.target }}
 
       - name: Prepare binary
         shell: bash
@@ -86,9 +75,6 @@ jobs:
           pattern: binary-*
           path: dist
           merge-multiple: true
-
-      - name: Update Changelog
-        uses:
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3

@@ -16,17 +16,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: 
-         - ubuntu-latest
-         - windows-latest
-         - macos-latest
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Build
-        run: cargo build --verbose
+      - name: Build programs
+        uses: ./.github/actions/rust-build
+        with:
+          target: ${{ matrix.os }}
 
       - name: Run tests
         run: cargo test --verbose
-  
