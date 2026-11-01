@@ -48,7 +48,7 @@ jobs:
       - name: Prepare binary
         shell: bash
         run: |
-          mkdir -p dist/mirror-${{ github.ref_name }}-${{ matrix.target }}
+          mkdir -p dist
           if [[ "${{ runner.os }}" == "Windows" ]]; then
             cp "target/${{ matrix.target }}/release/mirror.exe" \
               "dist/mirror-${{ github.ref_name }}-${{ matrix.target }}.exe"
